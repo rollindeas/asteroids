@@ -1,7 +1,11 @@
+import sys
 import pygame
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT
 from player import Player
-from logger import log_state
+from logger import log_state, log_event
+from asteroid import Asteroid
+from asteroidfield import AsteroidField
+from shot import Shot
 
 def main():
     pygame.init()
@@ -19,12 +23,20 @@ def main():
     # Create the sprite groups
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
+    my_group = pygame.sprite.Group()
+    asteroids = pygame.sprite.Group()
+    shots = pygame.sprite.Group()
 
     # Tell the Player class which groups it belongs to automatically
     Player.containers = (updatable, drawable)
+    Asteroid.containers = (asteroids, updatable, drawable)
+    AsteroidField.containers = updatable
+    Shot.containers = (shots, updatable, drawable)
+
 
     # Instantiate the Player in the center of the screen
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+    asteroid_field = AsteroidField()
 
     # Game loop starts here
     while True:
@@ -35,6 +47,22 @@ def main():
 
         # Update all objects in the updatable group
         updatable.update(dt)
+
+
+        # Check if an asteroid hits the player
+        for asteroid in asteroids:
+            if asteroid.collides_with(player):
+                log_event("player_hit")
+                print("Game over!")
+                sys.exit()
+                
+        for asteroid in asteroids:
+            for shot in shots:
+                if asteroid.collides_with(shot):
+                    log_event("asteroid_shot")
+                    asteroid.split()
+                    shot.kill()
+                
         log_state()
         
         # Clear the screen
